@@ -1,5 +1,3 @@
-# FlaskWeb
-
 # 桃树科技DataBrainSite项目部署指南
 
 - [x] **操作系统** Windows  **开发语言**  Python3.6 

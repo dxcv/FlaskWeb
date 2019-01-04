@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>DataBrain-Meek</title>
+	<link rel="shortcut icon" href="../static/favicon.ico"/>
+    <link rel="bookmark" href="../static/favicon.ico"/>
+	<link rel="stylesheet" href="../static/css/bootstrap.min.css">  
+	<script src="../static/js/jquery.min.js"></script>
+	<script src="../static/js/bootstrap.min.js"></script>
+ 
+    <!-- 引入 echarts.js -->
+    <script src="../static/js/echarts.min.js"></script>
+	<!-- 引入 echarts-wordcloud.js -->
+    <script src='../static/js/echarts-wordcloud.min.js'></script>	
+    <script src='../static/js/dark.js'></script>			
+	<style>
+		h1,h2,h3,h4,h5,p {
+    color: #fff !important;
+    }
+	body{
+	    background-image:url("../static/img/index_bg.png");
+	}
+	.center-top {
+    position: relative;
+    top: 0;
+    left: 0;
+    background: url(../static/img/title_border.png) bottom center no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+	.center-top>h1 {
+		color: #cdddf7;
+		letter-spacing: 5px;
+	}
+
+	/* navbar */
+	.navbar-inverse {
+		background-color: #3D3D3D;
+	}
+
+    .fakeimg {
+        height: 300px;
+        background: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+	<div class="center-top" style="color: #cdddf7;">
+		<h1>DataBrain</h1>
+	</div>
+			
+	<div class="container">
+	  <div class="row">
+		<div class="col-sm-6">
+			<h3 class="btn-danger">新闻核心词</h3>
+			<h5>{{info.name}}{{info.ts_code}}</h5>
+			<div id="wordc" class="fakeimg"><!-- 为ECharts准备一个具备大小（宽高）的Dom --></div>
+		</div>
+		 
+		<div class="col-sm-6">
+			<h3 class="btn-danger">历史走势图</h3>
+			<h5>{{info.name}}{{info.ts_code}}</h5>
+			<div id="kline" class="fakeimg"><!-- 为ECharts准备一个具备大小（宽高）的Dom --></div>
+		</div>
+	  </div>
+	</div>
+	<hr>
+	<div class="jumbotron text-center" style="margin-bottom:0">
+	 <a href="../" onClick="javascript :history.go(-1);">返回上一页</a>
+	</div>
+
+<script type="text/javascript">
+
+	var kChart = echarts.init(document.getElementById('kline'));
+	var wordChart = echarts.init(document.getElementById('wordc')); 
+    $(document).ready(function () {
+	   $('#example').DataTable({
+	   "searching": true,
+	   "cardView" : false, //是否显示详细视图
+       "detailView" : false, //是否显示父子表
+
+	   });
+      
+
+
+    });
+  
+   var result = {{wf}};
+   var wordFreqs = result;
+   var wordFreqData = new Array();
+   for (var i = 0; i < wordFreqs.length; i++) {
+        var option = [wordFreqs[i].name, wordFreqs[i].value];
+        wordFreqData.push(option);
+    }
+	
+   console.log("后台数据",result);
+
+
+
+	function word_cloud(data,maskImage) {
+	console.log(data);
+				var option = {
+					series: [ {
+						type: 'wordCloud',
+						sizeRange: [10, 100],
+						rotationRange: [-45, 45],
+						rotationStep: 45,
+						gridSize: 2,
+						shape: 'pentagon',
+					   // maskImage: maskImage,
+						drawOutOfBound: false,
+						textStyle: {
+							normal: {
+								color: function () {
+									return 'rgb(' + [
+										Math.round(Math.random() * 160),
+										Math.round(Math.random() * 160),
+										Math.round(Math.random() * 160)
+									].join(',') + ')';
+								}
+							},
+							emphasis: {
+								color: 'red'
+							}
+						},
+						data: data
+					} ]
+				};	
+				return option;
+	}
+
+	var maskImage = new Image();
+				//var world_option = world_cloud(eval('(' +  '${cloud}' + ')'),maskImage);
+				var word_option = word_cloud(result,maskImage);
+				maskImage.onload = function () {
+				//	word_option.series[0].maskImage
+					wordChart.setOption(word_option);
+				}
+				maskImage.src = '../static/logo.png';
+
+
+	var upColor = '#ec0000';
+	var upBorderColor = '#8A0000';
+	var downColor = '#00da3c';
+	var downBorderColor = '#008F28';
+
+	var dataCount = 3;
+	var data = {{k}};
+	console.log(data);
+	var k_option = {
+		dataset: {
+			source: data
+		},
+		title: {
+			text: ''
+		},
+		tooltip: {
+			trigger: 'axis',
+			axisPointer: {
+				type: 'line'
+			}
+		},
+		toolbox: {
+			feature: {
+				dataZoom: {
+					yAxisIndex: false
+				},
+			}
+		},
+		grid: [
+			{
+				left: '10%',
+				right: '10%',
+				height: 160,
+				bottom: 120
+			},
+			{
+				left: '10%',
+				right: '10%',
+				height: 50,
+				bottom: 50
+			}
+		],
+		xAxis: [
+			{
+				type: 'category',
+				scale: true,
+				boundaryGap : false,
+				// inverse: true,
+				axisLine: {onZero: false},
+				splitLine: {show: false},
+				splitNumber: 20,
+				min: 'dataMin',
+				max: 'dataMax'
+			},
+			{
+				type: 'category',
+				gridIndex: 1,
+				scale: true,
+				boundaryGap : false,
+				axisLine: {onZero: false},
+				axisTick: {show: false},
+				splitLine: {show: false},
+				axisLabel: {show: false},
+				splitNumber: 20,
+				min: 'dataMin',
+				max: 'dataMax'
+			}
+		],
+		yAxis: [
+			{
+				scale: true,
+				splitArea: {
+					show: true
+				}
+			},
+			{
+				scale: true,
+				gridIndex: 1,
+				splitNumber: 2,
+				axisLabel: {show: false},
+				axisLine: {show: false},
+				axisTick: {show: false},
+				splitLine: {show: false}
+			}
+		],
+		dataZoom: [
+			{
+				type: 'inside',
+				xAxisIndex: [0, 1],
+				start: 80,
+				end: 100
+			},
+			{
+				show: true,
+				xAxisIndex: [0, 1],
+				type: 'slider',
+				bottom: 10,
+				start: 10,
+				end: 100,
+				handleIcon: 'M10.7,11.9H9.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4h1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
+				handleSize: '105%'
+			}
+		],
+		visualMap: {
+			show: false,
+			seriesIndex: 1,
+			dimension: 6,
+			pieces: [{
+				value: 1,
+				color: upColor
+			}, {
+				value: -1,
+				color: downColor
+			}]
+		},
+		series: [
+			{
+				type: 'candlestick',
+				itemStyle: {
+					color: upColor,
+					color0: downColor,
+					borderColor: upBorderColor,
+					borderColor0: downBorderColor
+				},
+				encode: {
+					x: 0,
+					y: [1, 4, 3, 2]
+				}
+			},
+			{
+				name: 'Volumn',
+				type: 'bar',
+				xAxisIndex: 1,
+				yAxisIndex: 1,
+				itemStyle: {
+					color: '#7fbe9e'
+				},
+				large: true,
+				encode: {
+					x: 0,
+					y: 5
+				}
+			}
+		]
+	};
+	kChart.setOption(k_option);
+</script>
+</body>
+</html>
