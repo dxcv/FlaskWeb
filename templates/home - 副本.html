@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8"> 
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>DataBrain-Meek</title>
+	<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">  
+	<script src="https://cdn.staticfile.org/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<!-- 引入 dataTables.js -->
+	<script src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+	<script src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap.min.js"></script>
+	<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/dataTables.bootstrap.min.css">  
+    <!-- 引入 echarts.js -->
+    <script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts.min.js"></script>
+    <script src='static/js/dark.js'></script>	
+	<style>
+	h3,h4,h5,p {
+    color: #fff;
+    }
+	body{
+	    background-image:url("static/img/index_bg.png");
+	}
+	/* navbar */
+	.navbar-inverse {
+		background-color: #3D3D3D;
+	}
+
+    .fakeimg {
+        height: 350px;
+    }
+	.table-hover > tbody > tr:hover {
+		background-color: #ff7f50;
+		color:#ffffff;
+	}
+
+	.center-top {
+    position: relative;
+    top: 0;
+    left: 0;
+    background: url(static/img/title_border.png) bottom center no-repeat;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    }
+
+	.center-top>h1 {
+		color: #cdddf7;
+		letter-spacing: 5px;
+	}
+
+	.divcss5{
+	background:#ffffff; 
+	color:#000000;
+	padding:20px 10px 20px 10px;
+	}
+    </style>
+</head>
+<body>
+	<div class="center-top">
+		<h1>DataBrain-Meek</h1>
+	</div>
+
+	<div class="container"  style="width:80%">
+		<ul id="myTab" class="nav nav-tabs">
+		<li class="active">
+			<a href="#stocks" data-toggle="tab" aria-expanded="true">
+				 当日股票推荐
+			</a>
+		</li>
+		<li><a href="#analysis" data-toggle="tab" aria-expanded="false">DataBrain效果分析</a></li>
+		</ul>
+		<div class="row">
+			<div id="myTabContent" class="tab-content">
+				<div class="tab-pane fade in active" id="stocks">
+							<h3 class="btn-info">DataBrain-股票推荐</h3>
+							<div class="divcss5">
+							    <table id="stockTable" class="table table-hover table-striped table-bordered" width="100%">
+								<thead>
+								  <tr>
+											<th>日期</th>
+											<th>股票</th>
+											<th>代码</th>
+											<th>交易策略</th>
+											<th>总仓位</th>
+								  </tr>
+								</thead>
+
+							    </table>
+							</div>
+				</div>
+				<div class="tab-pane fade show" id="analysis">
+							<h3 class="btn-danger">DataBrain-业绩走势</h3>
+							<div class="fakeimg"> <div id="fundDB" style="height: 100%"></div></div>			 
+							<h3 class="btn-primary">DataBrain-实盘收益</h3>
+							<div id="dealDB" class="fakeimg"><!-- 为ECharts准备一个具备大小（宽高）的Dom color:rgba(233,150,122,0.9); --></div>
+							<p></p>
+				</div>
+			</div>
+		</div>		
+	</div>
+
+    <!-- 底部内容-->
+	<div class="jumbotron text-center" style="margin-bottom:0">
+	  <p>底部内容</p>
+	</div>
+<script type="text/javascript">
+	// charts = one minute
+	let UPDATE = 5000;
+	var fundChart = echarts.init(document.getElementById("fundDB"));
+    var dealChart = echarts.init(document.getElementById("dealDB"));
+		// 发送ajax请求，从后台获取json数据
+    $(document).ready(function () {
+	   		var table = $('#stockTable').DataTable( {
+			  	   "searching": true,
+				   "cardView" : false, //是否显示详细视图
+				   "detailView" : false, //是否显示父子表
+				   "bJQueryUI" : true,
+				   "bSort": false, //排序功能  
+				   "bInfo" : true, //是否显示页脚信息，DataTables插件左下角显示记录数  
+				  // "aaSorting" : [[1, "asc"]], //默认的排序方式，第2列，升序排列  
+				   "oLanguage": { //国际化配置 
+							"sProcessing" : "正在获取数据，请稍后...",   
+							"sLengthMenu" : "显示 _MENU_ 条",   
+							"sZeroRecords" : "没有您要搜索的内容",   
+							"sInfo" : "从 _START_ 到  _END_ 条记录 总记录数为 _TOTAL_ 条",   
+							"sInfoEmpty" : "记录数为0",   
+							"sInfoFiltered" : "(全部记录数 _MAX_ 条)",   
+							"sInfoPostFix" : "",   
+							"sSearch" : "搜索",   
+							"sUrl" : "",   
+							"oPaginate": {   
+								"sFirst" : "第一页",   
+								"sPrevious" : "上一页",   
+								"sNext" : "下一页",   
+								"sLast" : "最后一页"   
+							} 
+						},
+					ajax: {
+						 url: "/dt",
+						 dataSrc: ''
+					 },
+					colReorder: {
+					realtime: true
+					},
+					"aoColumns" : [
+						{data : 'date'},
+						{data : 'name'},
+						{data : 'code'},
+						{data : function(obj){
+										if(obj.bs=="加仓"){
+											return "使用中";
+										}else{
+											return "禁用";
+										}}
+						},
+						{data : 'dayhold'}
+					]
+			});
+			  
+		   $('#stockTable tbody').on( 'click', 'tr',  function () {
+				var rowData = table.row( $(this).closest('tr') ).data();
+				//console.log(rowData);
+				var scode = rowData.code
+				console.log(scode.substr(0, 1) == 6); // true
+				if(scode.substr(0, 1) == 6){
+					window.open('https://xueqiu.com/S/SH'+scode);
+				}else{
+					window.open('https://xueqiu.com/S/SZ'+scode);
+				}
+				
+			});
+  
+			$('#example tr').click(function() {
+				var href = $(this).find("a").attr("href");
+				if(href) {
+					window.location = href;
+				}
+			});
+			
+		   $("#stockTable tr :nth-child(2)").css("background","#D393F2");
+		   $('#stockTable tbody').css('cursor','pointer');
+			 // getData2();
+			//  getData();
+    });
+
+	setInterval( function () {
+	  console.log('reload');
+		$('#stockTable').DataTable().ajax.reload(null, false);
+	}, UPDATE  );
+
+	var fdate={{fundline.date}}
+	var fdb={{fundline.db}}
+	var fhs={{fundline.hs300}}
+	 fundChart.setOption({
+	 backgroundColor:'rgba(255, 255, 255, 1)',
+		 legend: {
+				data:['DB','HS300']
+			},
+		dataZoom: [{
+			type: 'inside'
+		}, {
+			type: 'slider'
+		}],
+		xAxis: {
+			type: 'category',
+			data: fdate
+		},
+		yAxis: {
+			type: 'value'
+		},
+		series: [
+		{
+			 name:'HS300',
+				type:'line',
+				smooth:false,
+				symbol: 'none',
+				sampling: 'average',
+				itemStyle: {
+					color: 'rgb(0, 70, 131)'
+				},
+				areaStyle: {
+					color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+						offset: 0,
+						color: 'rgb(0, 158, 68)'
+					}, {
+						offset: 1,
+						color: 'rgb(0, 70, 131)'
+					}])
+				},
+			data: fhs
+		},
+		{
+			 name:'DB',
+				type:'line',
+				smooth:false,
+				symbol: 'none',
+				sampling: 'average',
+				itemStyle: {
+					color: 'rgb(255, 70, 131)'
+				},
+				areaStyle: {
+					color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{
+						offset: 0,
+						color: 'rgb(255, 158, 68)'
+					}, {
+						offset: 1,
+						color: 'rgb(255, 70, 131)'
+					}])
+				},
+			data: fdb
+		}]
+	})
+
+
+	var fdb1={{fundbar.db}}
+	var fhs1={{fundbar.hs300}}
+	option = null;
+	option = {
+	    backgroundColor:'rgba(255, 255, 255, 1)',
+		title: {
+			text: '',
+			subtext: ''
+		},
+		tooltip: {
+			trigger: 'axis',
+			axisPointer: {
+				type: 'shadow'
+			}
+		},
+		legend: {
+			data: ['DB', 'HS300']
+		},
+		grid: {
+			left: '3%',
+			right: '4%',
+			bottom: '3%',
+			containLabel: true
+		},
+		dataZoom: [{
+			type: 'inside'
+		}, {
+			type: 'slider'
+		}],
+		xAxis: {
+			type: 'category',
+			data: ['第1周','第2周','第3周','第4周','第5周','第6周','第7周','第8周','第9周']
+		},
+		yAxis: {
+			type: 'value',
+			boundaryGap: [0, 0.01]
+		},
+		series: [
+			{
+				name: 'DB',
+				type: 'bar',
+				data: fdb1
+			},
+			{
+				name: 'HS300',
+				type: 'bar',
+				data: fhs1
+			}
+		]
+	};
+
+	if (option && typeof option === "object") {
+		dealChart.setOption(option, true);
+	}
+</script>
+</body>
+</html>
