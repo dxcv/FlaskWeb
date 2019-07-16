@@ -60,13 +60,11 @@ class WindStock:
         
         df00 = pd.DataFrame({'pe': data00.Data[0],'pb': data00.Data[1],'yoy_tr':data00.Data[2],"yoynetprofit":data00.Data[3],'industry':data00.Data[4]},index=data00.Codes)
         df00.fillna(0, inplace=True)
-        df00.insert(5,'label','成熟性行业') 
-        df00.label[df00['yoy_tr']>= 30]= '高增长行业'
-        df00.label[(df00['yoy_tr']>= 15) & (df00['yoy_tr']< 30)]= '中等成长行业'
-        df00.insert(6,'score0',1) 
+		
+        df00.insert(5,'score0',1) 
         for name, group in df00.groupby('industry'):
             #print(name)
-            if group.pe.count() > 10:
+            if group.industry.count() > 10:
                 try:
                     bins = group.pe.quantile([0, .2, .4, .6, .8, 1])
                     labels = [5, 4, 3, 2, 1]
@@ -76,31 +74,12 @@ class WindStock:
                     continue
             else:
                 pass
-    
-        df01 = df00[['pe',"yoynetprofit","label"]]
-        df01.insert(3,'PEG',df01['pe']/df01['yoynetprofit']) 
-        df01.insert(4,'score1',1) 
-        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']<= 0)]= 0
-        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 0)& (df01['pe']<= 10)]= 5
-        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 10) & (df01['pe']<= 15)]= 4
-        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 15) & (df01['pe']<= 20)]= 3
-        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 20) & (df01['pe']<= 30)]= 2
-    
-        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']<= 0)]= 0
-        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 0)& (df01['PEG']<= 1)]= 5
-        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 1) & (df01['PEG']<= 1.5)]= 4
-        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 1.5) & (df01['PEG']<= 2)]= 3
-        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 2) & (df01['PEG']<= 3)]= 2
-    
-        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']<= 0)]= 0
-        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 0)& (df01['PEG']<= 1)]= 5
-        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 1) & (df01['PEG']<= 1.5)]= 4
-        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 1.5) & (df01['PEG']<= 2)]= 3
-    
-        df00.insert(7,'score2',1) 
+				
+
+        df00.insert(6,'score2',1) 
         for name, group in df00.groupby('industry'):
             #print(name)
-            if group.pb.count() > 10:
+            if group.industry.count() > 10:
                 try:
                     bins = group.pb.quantile([0, .2, .4, .6, .8, 1])
                     labels = [5, 4, 3, 2, 1]
@@ -111,6 +90,42 @@ class WindStock:
             else:
                 pass
         
+        df00.insert(7,'yoy_industry',0) 
+        for name, group in df00.groupby('industry'):
+            #print(name)
+            if group.industry.count() > 10:
+                try:
+                    df00.loc[df00['industry'] == name,"yoy_industry"] = group.yoy_tr.quantile(0.5)
+                except Exception as e:
+                    print("Exception :%s" % (e) )
+                    continue
+            else:
+                df00.loc[df00['industry'] == name,"yoy_industry"] = group.yoy_tr.mean()
+				
+        df00.insert(8,'label','成熟性行业') 
+        df00.label[df00['yoy_industry']>= 30]= '高增长行业'
+        df00.label[(df00['yoy_industry']>= 15) & (df00['yoy_industry']< 30)]= '中等成长行业'
+
+    
+        df01 = df00[['pe',"yoynetprofit","label"]]
+        df01.insert(3,'PEG',df01['pe']/df01['yoynetprofit']) 
+        df01.insert(4,'score1',1) 
+        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']<= 0)]= 0
+        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 0)& (df01['pe']<= 12)]= 5
+        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 12) & (df01['pe']<= 18)]= 4
+        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 18) & (df01['pe']<= 25)]= 3
+        df01.score1[(df01['label'] == '成熟性行业') & (df01['pe']> 25) & (df01['pe']<= 30)]= 2
+    
+        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']<= 0)]= 0
+        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 0)& (df01['PEG']<= 1)]= 5
+        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 1) & (df01['PEG']<= 1.5)]= 4
+        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 1.5) & (df01['PEG']<= 2)]= 3
+        df01.score1[(df01['label'] == '中等成长行业') & (df01['PEG']> 2) & (df01['PEG']<= 3)]= 2
+    
+        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']<= 0)]= 0
+        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 0)& (df01['PEG']<= 1)]= 5
+        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 1) & (df01['PEG']<= 1.5)]= 4
+        df01.score1[(df01['label'] == '高增长行业') & (df01['PEG']> 1.5) & (df01['PEG']<= 2)]= 3 
         
         df02 = df00[['pb',"yoynetprofit","label"]]
         df02.insert(3,'score3',1) 
@@ -146,7 +161,7 @@ class WindStock:
                     bins0 = group.yoy_tr.quantile([0, .2, .4, .6, .8, 1])
                     bins1 = group.yoy.quantile([0, .2, .4, .6, .8, 1])
                     bins2 = group.yoy_de.quantile([0, .2, .4, .6, .8, 1])
-                    labels = [5, 4, 3, 2, 1]
+                    labels = [1, 2, 3, 4, 5]
                     df00.loc[df00['industry'] == name,"score0"] = pd.cut(group.yoy_tr, bins0, labels = labels, include_lowest=True)
                     df00.loc[df00['industry'] == name,"score1"] = pd.cut(group.yoy, bins1, labels = labels, include_lowest=True)
                     df00.loc[df00['industry'] == name,"score2"] = pd.cut(group.yoy_de, bins2, labels = labels, include_lowest=True)
@@ -177,7 +192,7 @@ class WindStock:
         df00["score01"] = df02.loc[:,["x","y","z"]].apply(lambda x: x.sum(), axis=1).replace([0, 1, 2, 3], [2, 3, 4.5, 5])
         df00["score02"] = df03.loc[:,["x","y","z"]].apply(lambda x: x.sum(), axis=1).replace([0, 1, 2, 3], [2, 3, 4.5, 5])
         
-        df00["score"] = 0.3*(0.7*df00["score0"]+0.3*df00["score00"])+0.2*(0.7*df00["score1"]+0.3*df00["score01"])+0.35*(0.7*df00["score2"]+0.3*df00["score02"])
+        df00["score"] = 0.3*(0.7*df00["score0"]+0.3*df00["score00"])+0.2*(0.7*df00["score1"]+0.3*df00["score01"])+0.5*(0.7*df00["score2"]+0.3*df00["score02"])
         
         return df00.score
   
@@ -191,8 +206,8 @@ class WindStock:
             #print(name)
             if group.dividend.count() > 10:
                 try:
-                    bins = group.dividend.quantile([0, .5, .8, 1])
-                    labels = [1, 3, 5]
+                    bins = group.dividend.quantile([0, .2, .4,  .6, .8, 1])
+                    labels = [1,2, 3, 4, 5]
                     df00.loc[df00['industry'] == name,"score0"] = pd.cut(group.dividend, bins, labels = labels, include_lowest=True)
                 except Exception as e:
                     print("Exception :%s" % (e) )
@@ -308,7 +323,7 @@ class WindStock:
         df01["y"] = df01['grossprofitmargin17']>df01['grossprofitmargin16']
         df01["z"] = df01['grossprofitmargin16']>df01['grossprofitmargin15']
         df00["score2"] = df01.loc[:,["x","y","z"]].apply(lambda x: x.sum(), axis=1).replace([0, 1, 2, 3], [2, 3, 4.5, 5])
-        df00["score"] = 0.6*df00["score0"]+0.2*df00["score1"]+0.2*df00["score2"]
+        df00["score"] = 0.2*df00["score0"]+0.4*df00["score1"]+0.4*df00["score2"]
         
         return df00.score
 
@@ -369,8 +384,8 @@ class WindStock:
         df00.insert(2,'score0',1) 
         df00.insert(3,'score1',1) 
         df00.insert(4,'score2',1)         
-        bins = [df00.income.min(), 6, 10, 15, 20, df00.income.max()]
-        labels = [1, 2, 3, 4, 5]
+        bins = [df00.income.min(), 30, 50, 60, 80, 100,df00.income.max()]
+        labels = [0, 1, 2, 3, 4, 5]
         df00.loc[:,"score0"] = pd.cut(df00.income, bins, labels = labels, include_lowest=True)
         df00.loc[:,"score0"] = df00['score0'].astype('int') 
         for name, group in df00.groupby('industry'):
@@ -410,7 +425,83 @@ class WindStock:
         df00.loc[:,"score0"] = pd.cut(df00.ev, bins, labels = labels, include_lowest=True)
         df00.loc[:,"score0"] = df00['score0'].astype('int') 
         return df00.score0
-# %% cell 2          
+# %% cell 2
+
+def peband(codes,plt = False):
+    import matplotlib.pyplot as plt
+    
+    
+    start_date = '20180101'
+    end_date=time.strftime('%Y%m%d',time.localtime())
+    symbols = []
+    for code in codes:
+        #获取和计算数据
+        wsd_data=w.wsd(code, "close,pe_ttm", start_date, end_date, "PriceAdj=F")
+        data = pd.DataFrame(wsd_data.Data,columns=wsd_data.Times,index=wsd_data.Fields)
+        data=data.T #转置数据表
+        data['EPS']=data['CLOSE']/data['PE_TTM']
+        
+        pe_c=data.median()['PE_TTM']
+        pe_e=data.min()['PE_TTM']
+        pe_a=pe_c+(pe_c-pe_e)
+        pe_b=(pe_a+pe_c)/2
+        pe_d=(pe_e+pe_c)/2
+        
+        
+        new_data=data[['CLOSE']]
+        
+        new_data[str(pe_a.round(2))+'X']=pe_a*data['EPS']
+        new_data[str(pe_b.round(2))+'X']=pe_b*data['EPS']
+        new_data[str(pe_c.round(2))+'X']=pe_c*data['EPS']
+        new_data[str(pe_d.round(2))+'X']=pe_d*data['EPS']
+        new_data[str(pe_e.round(2))+'X']=pe_e*data['EPS']
+        
+        if new_data.CLOSE[-1] < new_data[str(pe_d.round(2))+'X'][-1]:
+            print(code)
+            symbols.append(code)
+            if plt == True:  
+            #画图 print(code)
+                plt.figure(figsize = (16,9), dpi=120)
+                ax = new_data.plot(title=code,ax = plt.gca())
+                fig = ax.get_figure()
+                name = 'Result/'+code[0:6]+'.png' 
+                fig.savefig(os.path.join(root, name))
+                plt.close('all')
+            else:
+                pass
+                
+    return symbols
+
+# %% cell 3 
+def mypfopt(codes):
+    from pypfopt.efficient_frontier import EfficientFrontier
+    from pypfopt import risk_models
+    from pypfopt import expected_returns         
+    start_date = '20180101'
+    end_date=time.strftime('%Y%m%d',time.localtime())
+    _,wsd_data=w.wsd(codes, "close", start_date, end_date, "PriceAdj=F", usedf = True)
+    
+    # Calculate expected returns and sample covariance
+    mu = expected_returns.mean_historical_return(wsd_data)
+    S = risk_models.sample_cov(wsd_data)
+    
+    # 协方差矩阵的计算：np.cov  sklearn.covariance.GraphicalLasso  covariance_ == get_precision
+    # Optimise for maximal Sharpe ratio
+    ef = EfficientFrontier(mu, S)
+    raw_weights = ef.max_sharpe()
+    print('\n max_sharpe:')
+    for k, v in raw_weights.items():
+        if round(v,2) > 0:
+            print(k, round(v,2))
+    cleaned_weights = ef.clean_weights()
+    print('\n clean_weights:')
+    for k, v in cleaned_weights.items():
+        if round(v,2) > 0:
+            print(k, round(v,2))
+    print('\n portfolio_performance:')
+    ef.portfolio_performance(verbose=True)
+  
+# %% cell 4     
 def main():
     '''
     主调函数，可以通过参数调整实现分批下载
@@ -452,14 +543,27 @@ def main():
     ##经营活动产生的现金流量净额/经营活动净收益(ocftooperateincome)
     s10 = windStock.getIncome(symbols)
       
-    #[0.2,0.32*0.2,0.32*0.3,0.32*0.4,0.32*0.1,0.32*0.52,0.32*0.16,0.32*0.12,0.32*0.2,0.16*0.5,0.16*0.5]
+    #[0.2,0.32*0.2,0.32*0.3,0.32*0.4,0.32*0.1,0.32*0.52,0.32*0.16,0.32*0.12,0.32*0.2,0.16*0.3,0.16*0.7]
     df_score = pd.DataFrame({'s0': s0,'s1': s1,'s2': s2,'s3': s3,'s4': s4,'s5': s5,'s6': s6,'s7': s7,'s8': s8,'s9': s9,'s10': s10})
-    df_score["score"] = df_score.apply(lambda x: sum(x*[0.2,0.064,0.096,0.128,0.032,0.1664,0.0512,0.0384,0.064,0.08,0.08]), axis=1)
-    name = 'Result'+end_date+'.csv'                    #定义文件名字  
+    df_score["score"] = df_score.apply(lambda x: sum(x*[0.2,0.064,0.096,0.128,0.032,0.1664,0.0512,0.0384,0.064,0.048,0.112]), axis=1)
+    # Set up output directory and file
+    folder = os.path.exists('Result')
+    if not folder:
+        os.makedirs('Result')
+    name = 'Result/Result'+end_date+'.csv'                    #定义文件名字  
     print(os.path.join(root, name))   #合并路径名字和文件名字，并打印
-    df_score.to_csv(os.path.join(root, name),float_format='%.5f')
-
-# %% cell 3 
+    result_df = df_score.sort_values(["score"]).tail(50)
+    result_df.to_csv(os.path.join(root, name),float_format='%.5f')
+    codes_peband = result_df.index.to_list()
+    codes = peband(codes_peband)
+    codesn = [code+"\n" for code in codes]
+    fp = open('Result/peband'+end_date+'.txt','w+')
+    fp.writelines(codesn)
+    
+    mypfopt(codes)
+    
+    
+# %% cell 4 
 def test():
     '''
     测试脚本，新增和优化功能时使用
@@ -473,8 +577,6 @@ def test():
     #print (stock)
  
 
-         
-         
-         
+        
 if __name__ == "__main__":
     main()
